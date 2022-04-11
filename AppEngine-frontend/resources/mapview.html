@@ -1,0 +1,272 @@
+<html>
+	<head>
+		<title>Lightmotion Orion Central System</title>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+		<script src="https://unpkg.com/jquery@3.3.1/dist/jquery.min.js" crossorigin=""></script>
+		<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+		<style>
+			html, body
+			{
+				height: 100%;
+				margin: 0;
+				font-family: Helvetica, Arial, sans-serif;
+			}
+			.float-container
+			{
+				padding: 20px;
+				height: 800px;
+			}
+			.float-child
+			{
+				float: left;
+				height: 800px;
+			}
+			#sidemenu
+			{
+				width: 200px;
+			}
+			#map
+			{
+				width: 1700px;
+				max-width: 100%;
+				max-height: 100%;
+			}
+			h1
+			{
+				padding-top: 0.5%;
+				padding-left: 0.5%;
+			}
+		</style>
+		<script>
+
+		</script>
+	</head>
+	<body>
+		<h1>Lightmotion Orion</h1>
+		<div class="float-container">
+			<div id="sidemenu" class="float-child">
+				<b>Controllers:</b>
+				<ul id="controller-list">
+				</ul>
+			</div>
+			<div id="map" class="float-child" />
+			<script>
+				/* Set Ajax queries to synchronous */
+				$.ajaxSetup({
+					async: false
+				});
+
+				var mapLat;
+				var mapLon;
+				var mapZoom;
+				var mapMinZoom;
+				var mapMaxZoom;
+				var mapTileSize;
+				var mapZoomOffset;
+				var controllers = {};
+
+				/* Retrieve all parameters from the database via Ajax query */
+				$.getJSON("ajax?type=full", function(data) {
+					/* Mapview settings */
+					mapLat = data["mapview"]["lat"];
+					mapLon = data["mapview"]["lon"];
+					mapZoom = data["mapview"]["zoom"];
+					mapMinZoom = data["mapview"]["minZoom"];
+					mapMaxZoom = data["mapview"]["maxZoom"];
+					mapTileSize = data["mapview"]["tileSize"];
+					mapZoomOffset = data["mapview"]["zoomOffset"];
+					/* Controllers */
+					controllers = data["controllers"];
+				});
+
+				/* Instantiate a new map */
+				var map = L.map('map').setView([mapLat, mapLon], mapZoom);
+
+				/* Instantiate new tile layer */
+				var tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw',
+				{
+					minZoom: mapMinZoom,
+					maxZoom: mapMaxZoom,
+					attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+						'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+					id: 'mapbox/streets-v11',
+					tileSize: mapTileSize,
+					zoomOffset: mapZoomOffset
+				}).addTo(map);
+
+				/* Define custom icons */
+				var greenIcon = L.icon({
+				    iconUrl: 'resources/green_circle.png',
+    				shadowUrl: 'resources/shadow_circle.png',
+
+    				iconSize:     [32, 32], // size of the icon
+    				shadowSize:   [46, 46], // size of the shadow
+    				iconAnchor:   [16, 16], // point of the icon which will correspond to marker's location
+    				shadowAnchor: [23, 23],  // the same for the shadow
+    				popupAnchor:  [0, -20] // point from which the popup should open relative to the iconAnchor
+				});
+
+				var amberIcon = L.icon({
+				    iconUrl: 'resources/amber_circle.png',
+    				shadowUrl: 'resources/shadow_circle.png',
+
+    				iconSize:     [32, 32], // size of the icon
+    				shadowSize:   [46, 46], // size of the shadow
+    				iconAnchor:   [16, 16], // point of the icon which will correspond to marker's location
+    				shadowAnchor: [23, 23],  // the same for the shadow
+    				popupAnchor:  [0, -20] // point from which the popup should open relative to the iconAnchor
+				});
+
+				var darkIcon = L.icon({
+				    iconUrl: 'resources/dark_circle.png',
+    				shadowUrl: 'resources/shadow_circle.png',
+
+    				iconSize:     [32, 32], // size of the icon
+    				shadowSize:   [46, 46], // size of the shadow
+    				iconAnchor:   [16, 16], // point of the icon which will correspond to marker's location
+    				shadowAnchor: [23, 23],  // the same for the shadow
+    				popupAnchor:  [0, -20] // point from which the popup should open relative to the iconAnchor
+				});
+
+				var errorIcon = L.icon({
+				    iconUrl: 'resources/error_circle.png',
+    				shadowUrl: 'resources/shadow_circle.png',
+
+    				iconSize:     [32, 32], // size of the icon
+    				shadowSize:   [46, 46], // size of the shadow
+    				iconAnchor:   [16, 16], // point of the icon which will correspond to marker's location
+    				shadowAnchor: [23, 23],  // the same for the shadow
+    				popupAnchor:  [0, -20] // point from which the popup should open relative to the iconAnchor
+				});
+
+				var offlineIcon = L.icon({
+				    iconUrl: 'resources/gray_circle.png',
+    				shadowUrl: 'resources/shadow_circle.png',
+
+    				iconSize:     [32, 32], // size of the icon
+    				shadowSize:   [46, 46], // size of the shadow
+    				iconAnchor:   [16, 16], // point of the icon which will correspond to marker's location
+    				shadowAnchor: [23, 23],  // the same for the shadow
+    				popupAnchor:  [0, -20] // point from which the popup should open relative to the iconAnchor
+				});
+
+				/* Place controller markers on map */
+				controllers.forEach((controller) => {
+					if(controller["status"] == "green")
+					{
+						var marker = L.marker([controller["lat"], controller["lon"]], {icon: greenIcon}).addTo(map);
+					}
+					else if(controller["status"] == "amber")
+					{
+						var marker = L.marker([controller["lat"], controller["lon"]], {icon: amberIcon}).addTo(map);
+					}
+					else if(controller["status"] == "error")
+					{
+						var marker = L.marker([controller["lat"], controller["lon"]], {icon: errorIcon}).addTo(map);
+					}
+					else if(controller["status"] == "dark")
+					{
+						var marker = L.marker([controller["lat"], controller["lon"]], {icon: darkIcon}).addTo(map);
+					}
+					else if(controller["status"] == "offline")
+					{
+						var marker = L.marker([controller["lat"], controller["lon"]], {icon: offlineIcon}).addTo(map);
+					}
+					marker.bindTooltip("<b>" + controller["name"] + "</b><br /><br />Status: " + controller["mode"] + "<br />Alarms: " + controller["alarms"]);
+					marker.bindPopup("<b>Control options for " + controller["name"] + ":</b><br /><a href=\"javascript:sendControllerCommand('" + controller["name"] + "', 'dark');\">Set to dark</a><br /><a href=\"javascript:sendControllerCommand('" + controller["name"] + "', 'amber');\">Set to amber flashing</a><br /><a href=\"javascript:sendControllerCommand('" + controller["name"] + "', 'control');\">Set to control</a><br />");
+					marker._id = controller["name"];
+
+					/* Populate left-hand side menu */
+					$("#controller-list").append("<li><a href=\"javascript:goTo('" + controller["name"] + "', [" + controller["lat"] + ", " + controller["lon"] + "]);\">" + controller["name"] + "</a></li>");
+				});
+
+				/* From now on, update controller status every five seconds */
+				var updateInterval = setInterval(updateControllers, 5000);
+
+				/* Zoom in and center map on a particular controller,
+				   then open its tooltip */
+				function goTo(id, coords)
+				{
+					map.setView(coords, 16);
+					map.eachLayer(function (layer)
+					{
+						if(layer._id == id)
+						{
+							layer.openTooltip();
+						}
+						else
+						{
+							layer.closeTooltip();
+						}
+					});
+				}
+
+				/* Send a command to the backend to set a controller
+				   to a particular state */
+				function sendControllerCommand(id, command)
+				{
+					$.getJSON("ajax?type=control&controller=" + id + "&command=" + command, function(data) {
+						if(data["result"] == "Error")
+						{
+							alert("Command was not succesful.\n\nReason: " + data["error"]);
+						}
+						else
+						{
+							alert("Command sent succesfully.");
+						}
+					});
+					map.eachLayer(function (layer)
+					{
+						if(layer._id == id)
+						{
+							layer.closePopup();
+						}
+					});					
+				}
+
+				/* Retrieve controller statuses and update icons */
+				function updateControllers()
+				{
+					var controllers = {};
+
+					/* Send an Ajax query */
+					$.getJSON("ajax?type=status", function(data) {
+						controllers = data["controllers"];
+					});
+
+					/* Go through all controllers and update status */
+					map.eachLayer(function (layer)
+					{
+						controllers.forEach((controller) => {
+							if(layer._id == controller["name"])
+							{
+								if(controller["status"] == "green")
+								{
+									layer.setIcon(greenIcon);
+								}
+								else if(controller["status"] == "amber")
+								{
+									layer.setIcon(amberIcon);
+								}
+								else if(controller["status"] == "dark")
+								{
+									layer.setIcon(darkIcon);
+								}
+								else if(controller["status"] == "offline")
+								{
+									layer.setIcon(offlineIcon);
+								}
+								else if(controller["status"] == "error")
+								{
+									layer.setIcon(errorIcon);
+								}
+								layer.setTooltipContent("<b>" + controller["name"] + "</b><br /><br />Status: " + controller["mode"] + "<br />Alarms: " + controller["alarms"]);
+							}
+						});
+					});	
+				}
+
+			</script>
+		</div>
+	</body>
+</html>
