@@ -173,7 +173,7 @@
 						var marker = L.marker([controller["lat"], controller["lon"]], {icon: offlineIcon}).addTo(map);
 					}
 					marker.bindTooltip("<b>" + controller["name"] + "</b><br /><br />Status: " + controller["mode"] + "<br />Alarms: " + controller["alarms"]);
-					marker.bindPopup("<b>Control options for " + controller["name"] + ":</b><br /><a href=\"javascript:sendControllerCommand('" + controller["name"] + "', 'dark');\">Set to dark</a><br /><a href=\"javascript:sendControllerCommand('" + controller["name"] + "', 'amber');\">Set to amber flashing</a><br /><a href=\"javascript:sendControllerCommand('" + controller["name"] + "', 'control');\">Set to control</a><br />");
+					marker.bindPopup("<b>Control options for " + controller["name"] + ":</b><br /><a href=\"javascript:sendControllerCommand('" + controller["name"] + "', 'dark');\">Set to dark</a><br /><a href=\"javascript:sendControllerCommand('" + controller["name"] + "', 'amber');\">Set to amber flashing</a><br /><a href=\"javascript:sendControllerCommand('" + controller["name"] + "', 'green');\">Set to control</a><br />");
 					marker._id = controller["name"];
 
 					/* Populate left-hand side menu */

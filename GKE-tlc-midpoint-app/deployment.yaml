@@ -27,14 +27,19 @@ spec:
         app: tlc-midpoint-app
     spec:
       containers:
+      # The main application responsible for TLC (Traffic Light Controller) communication
       - name: tlc-midpoint-app
         image: europe-north1-docker.pkg.dev/core-song-343520/orion-midpoint/tlc-midpoint-app:latest
         ports:
         - containerPort: 10001
         resources:
           requests:
-            memory: "1Gi"
-            cpu:    "1"        
+            memory: "2Gi"
+            cpu:    "2"        
+        volumeMounts:
+        - name: pubsub-secrets
+          mountPath: /secrets/
+          readOnly: true
         env:
         - name: DB_USER
           valueFrom:
@@ -51,55 +56,31 @@ spec:
             secretKeyRef:
               name: orionsql
               key: database
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /secrets/service_account.json
+      # Load Google Cloud SQL Proxy as sidecar in the container
       - name: cloud-sql-proxy
-        # It is recommended to use the latest version of the Cloud SQL proxy
-        # Make sure to update on a regular schedule!
         image: gcr.io/cloudsql-docker/gce-proxy:1.28.0 # make sure the use the latest version
         command:
           - "/cloud_sql_proxy"
-
-          # If connecting from a VPC-native GKE cluster, you can use the
-          # following flag to have the proxy connect over private IP
-          # - "-ip_address_types=PRIVATE"
-
-          # By default, the proxy will write all logs to stderr. In some
-          # environments, anything printed to stderr is consider an error. To
-          # disable this behavior and write all logs to stdout (except errors
-          # which will still go to stderr), use:
           - "-log_debug_stdout"
-
-          # Replace DB_PORT with the port the proxy should listen on
-          # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
           - "-instances=core-song-343520:europe-north1:orion-sql=tcp:3306"
-
-        # [START cloud_sql_proxy_k8s_volume_mount]
-          # This flag specifies where the service account key can be found
           - "-credential_file=/secrets/service_account.json"
         securityContext:
-          # The default Cloud SQL proxy image runs as the
-          # "nonroot" user and group (uid: 65532) by default.
           runAsNonRoot: true
         volumeMounts:
-        - name: orionsecrets
+        - name: sql-proxy-secrets
           mountPath: /secrets/
           readOnly: true
-          # [END cloud_sql_proxy_k8s_volume_mount]
-        # Resource configuration depends on an application's requirements. You
-        # should adjust the following values based on what your application
-        # needs. For details, see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         resources:
           requests:
-            # The proxy's memory use scales linearly with the number of active
-            # connections. Fewer open connections will use less memory. Adjust
-            # this value based on your application's requirements.
             memory: "2Gi"
-            # The proxy's CPU use scales linearly with the amount of IO between
-            # the database and the application. Adjust this value based on your
-            # application's requirements.
             cpu:    "1"
-      # [START cloud_sql_proxy_k8s_volume_secret]
+      # Credential files loaded into volumes by GKE
       volumes:
-      - name: orionsecrets
+      - name: sql-proxy-secrets
         secret:
           secretName: gsakey
-      # [END cloud_sql_proxy_k8s_volume_secret]
+      - name: pubsub-secrets
+        secret:
+          secretName: pubsubgsakey

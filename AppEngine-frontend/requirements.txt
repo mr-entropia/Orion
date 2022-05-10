@@ -3,3 +3,5 @@ Flask==2.0.2
 psycopg2-binary==2.9.3 # you will need either the binary or the regular - for more info see http://initd.org/psycopg/docs/install.html
 PyMySQL==1.0.2
 SQLAlchemy==1.4.27
+google-cloud-pubsub==2.12.0
+google-cloud-logging==3.0.0
